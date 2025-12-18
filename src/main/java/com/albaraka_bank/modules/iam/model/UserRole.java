@@ -11,5 +11,9 @@ public enum UserRole implements GrantedAuthority {
     public String getAuthority() {
         return "ROLE_" + name();
     }
+
+    public java.util.Collection<? extends GrantedAuthority> getAuthorities() {
+        return java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority(getAuthority()));
+    }
 }
 
