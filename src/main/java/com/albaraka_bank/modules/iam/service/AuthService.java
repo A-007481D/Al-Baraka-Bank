@@ -40,9 +40,8 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Account creation will be handled in AccountService, triggered here if needed or separately
         if (role == UserRole.CLIENT) {
-             // accountService.createAccount(user); // Uncomment when AccountService is ready
+             accountService.createAccount(user);
         }
 
         return jwtService.generateToken(new org.springframework.security.core.userdetails.User(
