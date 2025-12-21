@@ -4,5 +4,6 @@ public enum OperationStatus {
     PENDING,
     EXECUTED,
     APPROVED,
-    REJECTED
+    REJECTED,
+    CANCELLED
 }
