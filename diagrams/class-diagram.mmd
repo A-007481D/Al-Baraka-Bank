@@ -1,0 +1,82 @@
+classDiagram
+
+    class User {
+        - uuid id
+        - String fullName
+        - String email
+        - String password
+        - UserRole role
+        - boolean isActive
+        - LocalDateTime createdAt
+
+    }
+
+    class Account {
+        - UUID id
+        - String accountNumber
+        - String owner
+        - BigDecimal balance
+        - credit(BigDecimal amount)
+        - debit(BigDecimal amount)
+
+    }
+
+    class Operation {
+        - UUID id
+        - OperationType type
+        - BigDecimal amount
+        - LocalDateTime createdAt
+        - LocalDateTime executedAt
+
+    }
+
+    class Doucment {
+        - UUID id
+        - String fileName
+        - String storagePath
+        - String fileType
+
+    }
+
+
+    class UserRole {
+        <<enumeration>>
+        ADMIN,
+        CLIENT,
+        AGENT
+    }
+
+
+    class OperationType {
+        <<enumeration>>
+        DEPOSITO,
+        WITHDRAWAL,
+        TRANSFER
+
+
+    }
+
+    class OperationStatus {
+        <<enumeration>>
+        PENDING,
+        EXECUTED,
+        REJECTED
+
+
+    }
+
+
+    %% RELATIONSHIPS
+
+    User "1" -- "1" UserRole : hasRole
+
+    User "1" -- "1..*" Account : owns
+
+    Account "1" -- "1..*" Operation : makes
+
+
+    Operation -- OperationType  : is a
+
+    Operation "*" -- "1" OperationStatus : has state
+
+    Operation -- Doucment : requires as proof (if >10k)
