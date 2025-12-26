@@ -2,12 +2,10 @@ package com.albaraka_bank.common.util;
 
 import com.albaraka_bank.modules.iam.model.User;
 import com.albaraka_bank.modules.iam.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Component
-@RequiredArgsConstructor
 public class SecurityUtils {
 
     private static UserRepository userRepository;
@@ -17,6 +15,9 @@ public class SecurityUtils {
     }
 
     public static User getCurrentUser() {
+        if (userRepository == null) {
+            throw new IllegalStateException("UserRepository not initialized");
+        }
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
