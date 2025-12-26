@@ -14,10 +14,18 @@ spring:
   h2:
     console:
       enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/albaraka
 
 jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1hbGJhcmFrYS1iYW5rLXRlc3RpbmctcHVycG9zZXMtb25seQ==
   expiration: 86400000
+
+keycloak:
+  enabled: false
 
 file:
   upload-dir: ./test-uploads

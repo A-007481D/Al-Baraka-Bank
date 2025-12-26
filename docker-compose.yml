@@ -15,6 +15,26 @@ services:
     networks:
       - albaraka-network
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: albaraka-keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    command: start-dev --import-realm
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    depends_on:
+      - postgres
+    networks:
+      - albaraka-network
+
   backend:
     build:
       context: .
@@ -26,10 +46,13 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       UPLOAD_DIR: ${UPLOAD_DIR}
+      KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/albaraka
     ports:
       - "8080:8080"
     depends_on:
       - postgres
+      - keycloak
     networks:
       - albaraka-network
     volumes:

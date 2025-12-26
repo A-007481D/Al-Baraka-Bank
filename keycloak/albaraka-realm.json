@@ -1,0 +1,61 @@
+{
+    "realm": "albaraka",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "registrationEmailAsUsername": true,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed": false,
+    "bruteForceProtected": true,
+    "roles": {
+        "realm": [
+            {
+                "name": "client",
+                "description": "Client role for banking operations"
+            },
+            {
+                "name": "agent",
+                "description": "Bank agent role for operation approval"
+            },
+            {
+                "name": "admin",
+                "description": "Administrator role"
+            }
+        ]
+    },
+    "defaultRoles": [
+        "client"
+    ],
+    "clients": [
+        {
+            "clientId": "albaraka-bank-api",
+            "name": "Al Baraka Bank API",
+            "enabled": true,
+            "publicClient": true,
+            "directAccessGrantsEnabled": true,
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "serviceAccountsEnabled": false,
+            "redirectUris": [
+                "http://localhost:8080/*",
+                "http://localhost:3000/*"
+            ],
+            "webOrigins": [
+                "http://localhost:8080",
+                "http://localhost:3000"
+            ],
+            "protocol": "openid-connect",
+            "attributes": {
+                "access.token.lifespan": "86400"
+            },
+            "defaultClientScopes": [
+                "openid",
+                "profile",
+                "email",
+                "roles"
+            ]
+        }
+    ]
+}
