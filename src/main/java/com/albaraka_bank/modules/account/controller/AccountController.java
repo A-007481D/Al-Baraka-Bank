@@ -22,13 +22,13 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getMyAccount() {
         User user = SecurityUtils.getCurrentUser();
         Account account = accountService.getAccountByOwner(user);
-
+        
         AccountResponse response = AccountResponse.builder()
                 .accountNumber(account.getAccountNumber())
                 .balance(account.getBalance())
                 .ownerName(user.getFullName())
                 .build();
-
+        
         return ResponseEntity.ok(response);
     }
 }

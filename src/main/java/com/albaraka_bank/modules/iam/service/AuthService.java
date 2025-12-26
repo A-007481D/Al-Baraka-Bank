@@ -24,32 +24,31 @@ public class AuthService {
         private final AuthenticationManager authenticationManager;
         private final AccountService accountService;
 
-    @Transactional
-    public String register(String fullName, String email, String password, UserRole role) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists");
+        @Transactional
+        public String register(String fullName, String email, String password, UserRole role) {
+                if (userRepository.findByEmail(email).isPresent()) {
+                        throw new RuntimeException("Email already exists");
+                }
+
+                var user = User.builder()
+                                .fullName(fullName)
+                                .email(email)
+                                .password(passwordEncoder.encode(password))
+                                .role(role)
+                                .active(true)
+                                .build();
+
+                userRepository.save(user);
+
+                if (role == UserRole.CLIENT) {
+                        accountService.createAccount(user);
+                }
+
+                return jwtService.generateToken(new org.springframework.security.core.userdetails.User(
+                                user.getEmail(),
+                                user.getPassword(),
+                                user.getRole().getAuthorities()));
         }
-
-        var user = User.builder()
-                .fullName(fullName)
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .role(role)
-                .active(true)
-                .build();
-
-        userRepository.save(user);
-
-        // Account creation will be handled in AccountService, triggered here if needed or separately
-        if (role == UserRole.CLIENT) {
-             // accountService.createAccount(user); // Uncomment when AccountService is ready
-        }
-
-        return jwtService.generateToken(new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                user.getRole().getAuthorities()));
-    }
 
         public String login(String email, String password) {
                 authenticationManager.authenticate(
