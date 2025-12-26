@@ -40,6 +40,16 @@ public class OperationService {
                 throw new RuntimeException("Destination account required for transfers");
             }
             destinationAccount = accountService.getAccountByNumber(request.getDestinationAccountNumber());
+
+            if (sourceAccount.getId().equals(destinationAccount.getId())) {
+                throw new IllegalArgumentException("Cannot transfer to the same account");
+            }
+        }
+
+        if (request.getType() == OperationType.WITHDRAWAL || request.getType() == OperationType.TRANSFER) {
+            if (sourceAccount.getBalance().compareTo(request.getAmount()) < 0) {
+                throw new IllegalArgumentException("Insufficient balance");
+            }
         }
 
         OperationStatus status = transactionValidator.validate(request.getAmount());
