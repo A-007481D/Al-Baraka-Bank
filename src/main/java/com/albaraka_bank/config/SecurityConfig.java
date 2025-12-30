@@ -2,6 +2,7 @@ package com.albaraka_bank.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -40,6 +41,37 @@ public class SecurityConfig {
 
     @Bean
     @Order(1)
+    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/", "/login", "/logout", "/dashboard", "/agent/**", "/admin/**", "/client/**",
+                        "/webjars/**", "/css/**", "/js/**")
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/logout"))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PathRequest
+                                .toStaticResources().atCommonLocations())
+                        .permitAll()
+                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/agent/**").hasRole("AGENT_BANCAIRE")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/client/**").hasRole("CLIENT")
+                        .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll())
+                .rememberMe(remember -> remember
+                        .key("albaraka-remember-me-key")
+                        .tokenValiditySeconds(7 * 24 * 60 * 60))
+                .authenticationProvider(authenticationProvider());
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain keycloakSecurityFilterChain(HttpSecurity http) throws Exception {
         if (!keycloakEnabled) {
             return http
@@ -66,9 +98,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+    @Order(3)
+    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+                .securityMatcher("/api/**", "/auth/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
