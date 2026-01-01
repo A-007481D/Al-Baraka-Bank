@@ -1,5 +1,6 @@
 package com.albaraka_bank.modules.operation.service;
 
+import com.albaraka_bank.modules.ai.service.AiService;
 import com.albaraka_bank.modules.operation.model.Document;
 import com.albaraka_bank.modules.operation.model.Operation;
 import com.albaraka_bank.modules.operation.repository.DocumentRepository;
@@ -19,6 +20,9 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final OperationRepository operationRepository;
     private final StoragePort storagePort;
+
+    private final AiService aiService;
+    private final OperationService operationService;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final List<String> ALLOWED_TYPES = List.of("application/pdf", "image/jpeg", "image/png");
@@ -46,7 +50,23 @@ public class DocumentService {
                 .operation(operation)
                 .build();
 
-        return documentRepository.save(document);
+        Document savedDoc = documentRepository.save(document);
+
+        try {
+            var decision = aiService.analyzeOperation(operation.getAmount().doubleValue(), contentType);
+            switch (decision) {
+                case APPROVE -> operationService.approveOperation(operationId);
+                case REJECT -> operationService.rejectOperation(operationId);
+                case NEED_HUMAN_REVIEW -> {
+                    // Stay PENDING
+                    System.out.println("AI recommended HUMAN REVIEW for operation " + operationId);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("AI Analysis failed: " + e.getMessage());
+            // stays PENDING
+        }
+
+        return savedDoc;
     }
 }
-
