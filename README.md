@@ -50,39 +50,42 @@ Secure banking platform with **dual JWT/OAuth2 authentication**, **AI-powered ri
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Al Baraka Digital Platform                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Client    │  │    Agent    │  │    Admin    │  │   External Apps     │ │
-│  │  (Browser)  │  │  (Browser)  │  │  (Browser)  │  │   (API Consumers)   │ │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘ │
-│         │                │                │                    │            │
-│         └────────────────┴────────────────┴────────────────────┘            │
-│                                    │                                        │
-│  ┌─────────────────────────────────▼─────────────────────────────────────┐  │
-│  │                     Spring Security Filter Chains                     │  │
-│  │  ┌──────────────┐  ┌──────────────────┐  ┌────────────────────────┐   │  │
-│  │  │ Web (Order 1)│  │ Keycloak (Order 2)│ │    API JWT (Order 3)   │   │  │
-│  │  │ Form Login   │  │ OAuth2 Resource   │ │    Bearer Token        │   │  │
-│  │  │ Remember-Me  │  │ Server            │ │    Stateless           │   │  │
-│  │  └──────────────┘  └──────────────────┘  └────────────────────────┘   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                    │                                        │
-│  ┌─────────────────────────────────▼─────────────────────────────────────┐  │
-│  │                          Application Layer                            │  │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
-│  │  │     IAM     │  │   Account   │  │  Operation  │  │     AI      │   │  │
-│  │  │   Module    │  │   Module    │  │   Module    │  │   Module    │   │  │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                    │                                        │
-│  ┌─────────────────────────────────▼─────────────────────────────────────┐  │
-│  │                          Data Layer (JPA)                             │  │ 
-│  │              PostgreSQL Database + File Storage                       │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Users ["User Interfaces"]
+        Client[Client Browser]
+        Agent[Agent Browser]
+        Admin[Admin Browser]
+    end
+
+    subgraph Security ["Security Layer"]
+        FC[Spring Security Filter Chains]
+        JWT[JWT Validation]
+        OAuth[OAuth2 / Keycloak]
+    end
+
+    subgraph App ["Application Layer"]
+        IAM[IAM Module]
+        Acc[Account Module]
+        Ops[Operation Module]
+        AI[AI Module (Spring AI)]
+    end
+
+    subgraph Data ["Data & Infrastructure"]
+        DB[(PostgreSQL)]
+        Gemini[Google Gemini API]
+    end
+
+    Client & Agent & Admin --> FC
+    FC --> IAM & Acc & Ops
+    Ops --> AI
+    AI --> Gemini
+    IAM & Acc & Ops --> DB
+    
+    style Users fill:#e94560,stroke:#fff,color:#fff
+    style Security fill:#0f3460,stroke:#fff,color:#fff
+    style App fill:#16213e,stroke:#fff,color:#fff
+    style Data fill:#533483,stroke:#fff,color:#fff
 ```
 
 ---
@@ -93,35 +96,64 @@ Secure banking platform with **dual JWT/OAuth2 authentication**, **AI-powered ri
 
 The platform implements **stateless JWT authentication** for REST API endpoints.
 
-```
-┌──────────┐         ┌──────────────┐          ┌─────────────┐
-│  Client  │         │ AuthController│         │  JwtService │
-└────┬─────┘         └───────┬───────┘         └──────┬──────┘
-     │                       │                        │
-     │  POST /auth/login     │                        │
-     │  {email, password}    │                        │
-     │──────────────────────>│                        │
-     │                       │                        │
-     │                       │  authenticate()        │
-     │                       │───────────────────────>│
-     │                       │                        │
-     │                       │  generateToken(user)   │
-     │                       │<───────────────────────│
-     │                       │                        │
-     │  200 {"token": "..."} │                        │
-     │<──────────────────────│                        │
-     │                       │                        │
-     │  GET /api/client/ops  │                        │
-     │  Authorization: Bearer xyz                     │
-     │──────────────────────>│                        │
-     │                       │                        │
-     │           ┌───────────▼───────────┐            │
-     │           │      JwtFilter        │            │
-     │           │  - Extract token      │            │
-     │           │  - Validate signature │            │
-     │           │  - Load UserDetails   │            │
-     │           │  - Set SecurityContext│            │
-     │           └───────────────────────┘            │
+```mermaid
+flowchart TD
+    subgraph Client["Client Request"]
+        REQ[/"HTTP Request"/]
+    end
+
+    subgraph SecurityFilters["Spring Security Filter Chains"]
+        direction TB
+        
+        subgraph FC1["Filter Chain 1 (Order 1) - Web UI"]
+            WEB_MATCH{"Path matches<br/>/, /login, /dashboard<br/>/agent/**, /admin/**?"}
+            FORM_LOGIN["Form Login<br/>+ Remember-Me"]
+            SESSION["Stateful Session<br/>(7 days remember-me)"]
+        end
+
+        subgraph FC2["Filter Chain 2 (Order 2) - Keycloak OAuth2"]
+            KC_ENABLED{"Keycloak<br/>Enabled?"}
+            KC_MATCH{"Path matches<br/>/api/keycloak/**?"}
+            KC_JWT["OAuth2 Resource Server<br/>JWT Decoder"]
+            KC_CONVERT["KeycloakJwtConverter<br/>Extract realm_access roles"]
+        end
+
+        subgraph FC3["Filter Chain 3 (Order 3) - JWT API"]
+            API_MATCH{"Path matches<br/>/api/**, /auth/**?"}
+            JWT_FILTER["JwtFilter<br/>Extract Bearer Token"]
+            JWT_VALID{"Token<br/>Valid?"}
+            JWT_SERVICE["JwtService<br/>HMAC-SHA256 Verify"]
+            USER_DETAILS["UserDetailsService<br/>Load User"]
+        end
+    end
+
+    subgraph Auth["Authentication Result"]
+        SEC_CTX["SecurityContextHolder<br/>Set Authentication"]
+        DENIED["403 Forbidden<br/>or 401 Unauthorized"]
+    end
+
+    %% Flow
+    REQ --> WEB_MATCH
+    WEB_MATCH -->|Yes| FORM_LOGIN
+    FORM_LOGIN --> SESSION
+    SESSION --> SEC_CTX
+
+    WEB_MATCH -->|No| KC_ENABLED
+    KC_ENABLED -->|No| API_MATCH
+    KC_ENABLED -->|Yes| KC_MATCH
+
+    KC_MATCH -->|Yes| KC_JWT
+    KC_JWT --> KC_CONVERT
+    KC_CONVERT --> SEC_CTX
+    KC_MATCH -->|No| API_MATCH
+
+    API_MATCH -->|No| DENIED
+    API_MATCH -->|Yes| JWT_FILTER
+    JWT_FILTER --> JWT_VALID
+    JWT_VALID -->|No| DENIED
+    JWT_VALID -->|Yes| JWT_SERVICE
+    JWT_SERVICE --> USER_DETAILS
+    USER_DETAILS --> SEC_CTX
 ```
 
 **Key Configuration:**
@@ -192,43 +224,78 @@ The application uses **three ordered security filter chains**:
 
 ### Automatic vs Manual Validation
 
-```
-                    ┌─────────────────────┐
-                    │ Create Operation    │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │  Amount > 10,000 DH? │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┴────────────────┐
-              │ NO                              │ YES
-              ▼                                 ▼
-    ┌─────────────────┐              ┌─────────────────────┐
-    │ Auto-Approved   │              │ Status: PENDING     │
-    │ Status: EXECUTED│              │ Require Document    │
-    │ Balance Updated │              └──────────┬──────────┘
-    └─────────────────┘                         │
-                                                ▼
-                                    ┌─────────────────────┐
-                                    │ Upload Justificatif │
-                                    │ (PDF/JPG/PNG, 5MB)  │
-                                    └──────────┬──────────┘
-                                                │
-                                                ▼
-                                    ┌─────────────────────┐
-                                    │   AI Risk Analysis  │
-                                    │   (Spring AI)       │
-                                    └──────────┬──────────┘
-                                                │
-                      ┌─────────────────────────┼─────────────────────────┐
-                      │ APPROVE                 │ NEED_HUMAN_REVIEW       │ REJECT
-                      ▼                         ▼                         ▼
-            ┌─────────────────┐     ┌─────────────────────┐    ┌─────────────────┐
-            │ Auto-Execute    │     │ Agent Review Queue  │    │ Auto-Reject     │
-            │ Balance Updated │     │ Manual Decision     │    │ No Balance Chg  │
-            └─────────────────┘     └─────────────────────┘    └─────────────────┘
+```mermaid
+flowchart TD
+    %% --- ACTORS ---
+    Client((Client))
+    Agent((Agent Bancaire))
+    DB[(PostgreSQL)]
+
+    %% --- SCENARIO 3, 4, 5: OPERATIONS ---
+    subgraph Operations ["Transaction Logic"]
+        SelectOp{Select Operation Type}
+
+    %% PATH 1: DEPOSIT
+        SelectOp -- DEPOSIT --> DepInput["Input Amount X"]
+        DepInput --> CheckLimit{Amount > 10,000 DH?}
+
+    %% PATH 2: WITHDRAWAL
+        SelectOp -- WITHDRAWAL --> WithInput["Input Amount X"]
+        WithInput --> CheckBalW{Balance >= X?}
+        CheckBalW -- No --> ErrBal["Error: Insufficient Balance"]
+        CheckBalW -- Yes --> CheckLimit
+
+    %% PATH 3: TRANSFER
+        SelectOp -- TRANSFER --> TransInput["Input Amount X + Dest Account"]
+        TransInput --> CheckBalT{Balance >= X?}
+        CheckBalT -- No --> ErrBal
+        CheckBalT -- Yes --> CheckLimit
+    end
+
+    %% CASE A: AUTO VALIDATION (<= 10k)
+    CheckLimit -- "NO (<= 10k)" --> AutoVal["Scenario A: Auto Validation"]
+    AutoVal --> ExecStat["Set Status: EXECUTED"]
+    ExecStat --> UpdateBalA["Update Balance Immediately"]
+    UpdateBalA --> DB
+
+    %% CASE B: MANUAL VALIDATION (> 10k)
+    CheckLimit -- "YES (> 10k)" --> ManVal["Scenario B: Manual Validation"]
+    ManVal --> PendStat["Set Status: PENDING"]
+    PendStat --> DB
+    PendStat --> ReqDoc["Response: 202 Upload Required"]
+
+    ReqDoc -->|Client Action| Upload["Upload Justificatif<br/>(PDF/JPG/PNG, max 5MB)"]
+    Upload --> SaveFile["Save File to Storage"]
+    SaveFile --> DB
+
+    %% --- AI RISK ANALYSIS ---
+    subgraph AIAnalysis ["AI Risk Analysis (Spring AI + Gemini)"]
+        SaveFile --> AIService["AiService.analyzeOperation()"]
+        AIService --> AIPrompt["Prompt Template:<br/>Amount + Document Type"]
+        AIPrompt --> Gemini["Google Gemini Flash<br/>Risk Assessment"]
+        Gemini --> AIDecision{AI Recommendation}
+    end
+
+    AIDecision -- "APPROVE" --> AIApprove["Recommend: APPROVE"]
+    AIDecision -- "REJECT" --> AIReject["Recommend: REJECT"]
+    AIDecision -- "NEED_HUMAN_REVIEW" --> AIReview["Recommend: REVIEW"]
+
+    AIApprove & AIReject & AIReview --> HumanQueue["Agent Review Queue"]
+
+    %% --- SCENARIO 6: AGENT REVIEW ---
+    subgraph AgentReview ["Scenario 6: Agent Validation"]
+        Agent -->|GET /pending| ViewPend["View Pending Ops + Docs"]
+        HumanQueue --> ViewPend
+        ViewPend --> Decision{Approve or Reject?}
+
+        Decision -- REJECT --> SetRej["Set Status: CANCELLED"]
+        SetRej --> NoMov["Balance Unchanged"]
+        NoMov --> DB
+
+        Decision -- APPROVE --> SetApp["Set Status: EXECUTED"]
+        SetApp --> UpdateBalB["Update Balance Now"]
+        UpdateBalB --> DB
+    end
 ```
 
 ### Strategy Pattern Implementation
@@ -253,7 +320,7 @@ OperationFactory
 
 ## Spring AI Integration
 
-The platform uses **Spring AI with OpenAI** for intelligent transaction risk analysis.
+The platform uses **Spring AI with Google Gemini** for intelligent transaction risk analysis.
 
 ### AI Service Configuration
 
@@ -261,29 +328,31 @@ The platform uses **Spring AI with OpenAI** for intelligent transaction risk ana
 spring:
   ai:
     openai:
-      api-key: ${SPRING_AI_OPENAI_API_KEY}
+      api-key: ${SPRING_AI_GOOGLE_GEMINI_API_KEY}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai/
       chat:
         options:
-          model: gpt-3.5-turbo
+          model: gemini-3-flash-preview
 ```
 
 ### AI Decision Types
 
 | Decision | Description | Action |
 |----------|-------------|--------|
-| `APPROVE` | Low-risk transaction | Auto-execute operation |
-| `REJECT` | Suspicious transaction | Auto-reject, notify client |
-| `NEED_HUMAN_REVIEW` | Uncertain risk | Queue for agent review |
+| `APPROVE` | Low-risk transaction | Recommended for approval |
+| `REJECT` | Suspicious transaction | Recommended for rejection |
+| `NEED_HUMAN_REVIEW` | Uncertain risk | Flagged for review |
 
 ### AI Risk Rules
 
 ```java
 // AiService.java prompt logic
 Rules:
-1. If amount < 20,000 DH and document is 'payslip' → APPROVE
-2. If amount > 50,000 DH → NEED_HUMAN_REVIEW
-3. If document is 'suspicious' → REJECT
-4. Otherwise → NEED_HUMAN_REVIEW
+1. Verify if document content supports transaction amount.
+2. If document mentions amount, it MUST match transaction (5% tolerance).
+3. If amount < 50,000 DH and document is 'payslip' or 'invoice' -> APPROVE.
+4. If amount >= 50,000 DH -> NEED_HUMAN_REVIEW.
+5. If document is 'suspicious' or contradicts -> REJECT.
 ```
 
 ---
@@ -443,6 +512,20 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 ```
 
+### Docker Architecture
+```mermaid
+graph TD
+    User[User Browser] -->|Port 8080| App[Spring Boot App]
+    App -->|Port 5432| DB[PostgreSQL]
+    App -->|Port 8180| KC[Keycloak]
+    App -->|HTTPS| Gemini[Google Gemini API]
+    
+    style App fill:#16213e,stroke:#fff,color:#fff
+    style DB fill:#533483,stroke:#fff,color:#fff
+    style KC fill:#0f3460,stroke:#fff,color:#fff
+    style Gemini fill:#e94560,stroke:#fff,color:#fff
+```
+
 ### Docker Compose Services
 
 ```yaml
@@ -506,14 +589,20 @@ jobs:
 
 ### Pipeline Stages
 
-```
-┌────────────────┐     ┌────────────────┐     ┌────────────────┐
-│   Checkout     │────>│  Run Tests     │────>│  Build JAR     │
-└────────────────┘     └────────────────┘     └────────────────┘
-                                                      │
-┌────────────────┐     ┌────────────────┐            │
-│  Push to GHCR  │<────│  Build Docker  │<───────────┘
-└────────────────┘     └────────────────┘
+```mermaid
+flowchart LR
+    Push[Push to Main/Develop] --> Test[Run Tests (Maven)]
+    Test --> Build[Build JAR]
+    Build --> DockerBuild[Build Docker Image]
+    DockerBuild --> PushReg[Push to GHCR]
+    PushReg --> Deploy[Ready for Deployment]
+    
+    style Push fill:#533483,stroke:#fff,color:#fff
+    style Test fill:#0f3460,stroke:#fff,color:#fff
+    style Build fill:#0f3460,stroke:#fff,color:#fff
+    style DockerBuild fill:#16213e,stroke:#fff,color:#fff
+    style PushReg fill:#28a745,stroke:#fff,color:#fff
+    style Deploy fill:#e94560,stroke:#fff,color:#fff
 ```
 
 ### Image Tags
@@ -589,49 +678,6 @@ export DB_PASSWORD=your_password
 export JWT_SECRET=your_base64_secret
 ./mvnw spring-boot:run
 ```
-
----
-
-## Performance Criteria
-
-### Business Rules Compliance ✅
-- 10,000 DH threshold strictly enforced
-- Balance validation before withdrawal/transfer
-- Document upload required for high-value transactions
-- Audit trail for all operations
-
-### JWT Stateless Implementation ✅
-- No server-side session storage
-- 24-hour token expiration
-- HS256 signature verification
-- BCrypt password hashing
-
-### Endpoint Security ✅
-- Role-based access (CLIENT, AGENT_BANCAIRE, ADMIN)
-- Three distinct security filter chains
-- OAuth2 Resource Server for Keycloak
-- Method-level security with `@PreAuthorize`
-
-### Code Architecture ✅
-- Clean separation: Controller → Service → Repository
-- Strategy Pattern for operations
-- Factory Pattern for strategy selection
-- Modular package structure
-
-### Spring AI Integration ✅
-- OpenAI GPT-3.5-turbo for risk analysis
-- Prompt-based decision engine
-- Graceful fallback to human review
-
-### CI/CD Pipeline ✅
-- Automated testing on push
-- Docker image build and push
-- GitHub Container Registry integration
-
-### Docker Deployment ✅
-- Multi-stage build for optimized images
-- Docker Compose orchestration
-- PostgreSQL + Keycloak + Backend services
 
 ---
 
