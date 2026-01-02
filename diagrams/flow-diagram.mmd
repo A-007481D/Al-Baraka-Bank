@@ -1,45 +1,48 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#16213e', 'lineColor': '#e94560', 'secondaryColor': '#0f3460', 'tertiaryColor': '#533483'}}}%%
+
 flowchart TD
 %% --- ACTORS ---
     Client((Client))
     Agent((Agent Bancaire))
     Admin((Admin))
     System{Al Baraka API}
-    DB[(Database)]
+    DB[(PostgreSQL)]
+    AI{Spring AI}
 
 %% --- SCENARIO 7: ADMIN MANAGEMENT ---
-    subgraph S7 [Scenario 7: Admin Governance]
+    subgraph S7 ["Scenario 7: Admin Governance"]
         Admin -->|POST /users| CreateAgent["Create Agent Account"]
         Admin -->|PUT /users| ManageUser["Activate/Deactivate User"]
         CreateAgent & ManageUser --> DB
     end
 
 %% --- SCENARIO 1 & 2: ONBOARDING ---
-    subgraph S1_2 [Scenario 1 & 2: Client Access]
-        Client -->|1. Register| RegForm["Fill: Email, Pass, Name"]
+    subgraph S1_2 ["Scenario 1 & 2: Client Access"]
+        Client -->|"1. Register"| RegForm["Fill: Email, Pass, Name"]
         RegForm -->|Generate Account #| GenAcc["Create Account + User"]
         GenAcc --> DB
 
-        Client -->|2. Login| Login["Auth: Email + Pass"]
-        Login -->|Generate Token| JWT["Return JWT Stateless"]
+        Client -->|"2. Login"| Login["Auth: Email + Pass"]
+        Login -->|Generate Token| JWT["Return JWT Stateless<br/>24h Expiration"]
     end
 
 %% --- SCENARIO 3, 4, 5: OPERATIONS ---
-    subgraph S3_4_5 [Scenario 3, 4, 5: Transaction Logic]
+    subgraph S3_4_5 ["Scenario 3, 4, 5: Transaction Logic"]
         JWT --> SelectOp{Select Operation Type}
 
     %% PATH 1: DEPOSIT (Scenario 3)
         SelectOp -- DEPOSIT --> DepInput["Input Amount X"]
-        DepInput --> CheckLimit{Amount > 10,000?}
+        DepInput --> CheckLimit{Amount > 10,000 DH?}
 
     %% PATH 2: WITHDRAWAL (Scenario 4)
         SelectOp -- WITHDRAWAL --> WithInput["Input Amount X"]
-        WithInput --> CheckBalW{Solde >= X?}
+        WithInput --> CheckBalW{Balance >= X?}
         CheckBalW -- No --> ErrBal["Error: Insufficient Balance"]
         CheckBalW -- Yes --> CheckLimit
 
     %% PATH 3: TRANSFER (Scenario 5)
         SelectOp -- TRANSFER --> TransInput["Input Amount X + Dest Account"]
-        TransInput --> CheckBalT{Solde >= X?}
+        TransInput --> CheckBalT{Balance >= X?}
         CheckBalT -- No --> ErrBal
         CheckBalT -- Yes --> CheckLimit
     end
@@ -58,20 +61,58 @@ flowchart TD
     PendStat --> DB
     PendStat --> ReqDoc["Response: 202 Upload Required"]
 
-    ReqDoc -->|Client Action| Upload["Upload Justificatif<br/>POST /document"]
-    Upload --> SaveFile["Save File PDF/JPG"]
+    ReqDoc -->|Client Action| Upload["Upload Justificatif<br/>POST /document<br/>(PDF/JPG/PNG, max 5MB)"]
+    Upload --> SaveFile["Save File to Storage"]
     SaveFile --> DB
 
+%% --- AI RISK ANALYSIS ---
+    subgraph AIAnalysis ["AI Risk Analysis (Spring AI + OpenAI)"]
+        SaveFile --> AIService["AiService.analyzeOperation()"]
+        AIService --> AIPrompt["Prompt Template:<br/>Amount + Document Type"]
+        AIPrompt --> GPT["GPT-3.5-turbo<br/>Risk Assessment"]
+        GPT --> AIDecision{AI Decision}
+    end
+
+    AIDecision -- "APPROVE<br/>(amount < 20k + payslip)" --> AIApprove["Auto-Execute"]
+    AIApprove --> UpdateBalAI["Update Balance"]
+    UpdateBalAI --> DB
+
+    AIDecision -- "REJECT<br/>(suspicious doc)" --> AIReject["Auto-Reject"]
+    AIReject --> DB
+
+    AIDecision -- "NEED_HUMAN_REVIEW<br/>(amount > 50k or uncertain)" --> HumanQueue["Agent Review Queue"]
+
 %% --- SCENARIO 6: AGENT REVIEW ---
-    subgraph S6 [Scenario 6: Agent Validation]
+    subgraph S6 ["Scenario 6: Agent Validation"]
         Agent -->|GET /pending| ViewPend["View Pending Ops + Docs"]
+        HumanQueue --> ViewPend
         ViewPend --> Decision{Approve or Reject?}
 
-        Decision -- REJECT --> SetRej["Set Status: REJECTED"]
-        SetRej --> NoMov["Solde Inchangé"]
+        Decision -- REJECT --> SetRej["Set Status: CANCELLED"]
+        SetRej --> NoMov["Balance Unchanged"]
         NoMov --> DB
 
         Decision -- APPROVE --> SetApp["Set Status: EXECUTED"]
         SetApp --> UpdateBalB["Update Balance Now<br/>(Execute Logic delayed)"]
         UpdateBalB --> DB
     end
+
+%% --- AUDIT TRAIL ---
+    subgraph Audit ["Audit Trail"]
+        DB --> AuditLog["Operation History<br/>createdAt, validatedAt, executedAt"]
+    end
+
+%% --- STYLING ---
+    classDef actor fill:#533483,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef decision fill:#0f3460,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef success fill:#28a745,stroke:#fff,stroke-width:2px,color:#fff
+    classDef error fill:#e94560,stroke:#fff,stroke-width:2px,color:#fff
+    classDef pending fill:#ffc107,stroke:#333,stroke-width:2px,color:#333
+    classDef ai fill:#9c27b0,stroke:#fff,stroke-width:2px,color:#fff
+
+    class Client,Agent,Admin actor
+    class SelectOp,CheckLimit,CheckBalW,CheckBalT,Decision,AIDecision decision
+    class AutoVal,AIApprove,SetApp success
+    class ErrBal,AIReject,SetRej error
+    class ManVal,PendStat,HumanQueue pending
+    class AIService,AIPrompt,GPT ai

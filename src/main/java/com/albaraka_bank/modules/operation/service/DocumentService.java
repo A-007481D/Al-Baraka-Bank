@@ -1,5 +1,7 @@
 package com.albaraka_bank.modules.operation.service;
 
+import com.albaraka_bank.modules.ai.model.AiDecision;
+import com.albaraka_bank.modules.ai.service.AiService;
 import com.albaraka_bank.modules.operation.model.Document;
 import com.albaraka_bank.modules.operation.model.Operation;
 import com.albaraka_bank.modules.operation.repository.DocumentRepository;
@@ -19,6 +21,10 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final OperationRepository operationRepository;
     private final StoragePort storagePort;
+
+    private final AiService aiService;
+    private final OperationService operationService;
+    private final com.albaraka_bank.modules.ai.service.TextExtractionService textExtractionService;
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final List<String> ALLOWED_TYPES = List.of("application/pdf", "image/jpeg", "image/png");
@@ -46,7 +52,32 @@ public class DocumentService {
                 .operation(operation)
                 .build();
 
-        return documentRepository.save(document);
+        Document savedDoc = documentRepository.save(document);
+
+        try {
+            // Extract text from document
+            String documentContent = textExtractionService.extractText(file);
+
+            var analysisResult = aiService.analyzeOperation(operation.getAmount().doubleValue(), contentType,
+                    documentContent);
+
+            // Save reasoning
+            operation.setAiAnalysis(analysisResult.decision() + ": " + analysisResult.reasoning());
+            operationRepository.save(operation);
+
+            // Auto-execution disabled per user request. Agent must review.
+            System.out.println("AI Analysis completed. Decision: " + analysisResult.decision());
+        } catch (Exception e) {
+            System.err.println("AI Analysis failed: " + e.getMessage());
+            // Save error to analysis field for debugging
+            try {
+                operation.setAiAnalysis("AI Analysis Failed: " + e.getMessage());
+                operationRepository.save(operation);
+            } catch (Exception ex) {
+                // Ignore
+            }
+        }
+
+        return savedDoc;
     }
 }
-

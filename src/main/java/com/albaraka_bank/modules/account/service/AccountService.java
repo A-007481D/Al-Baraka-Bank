@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -51,12 +52,11 @@ public class AccountService {
     }
 
     private String generateAccountNumber() {
-        StringBuilder sb = new StringBuilder();
-        java.util.Random random = new java.util.Random();
-        for (int i = 0; i < 16; i++) {
+        StringBuilder sb = new StringBuilder("ALB");
+        Random random = new Random();
+        for (int i = 0; i < 12; i++) {
             sb.append(random.nextInt(10));
         }
         return sb.toString();
     }
 }
-

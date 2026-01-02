@@ -48,6 +48,9 @@ public class Operation {
     @JoinColumn(name = "destination_account_id")
     private Account accountDestination;
 
+    @Column(columnDefinition = "TEXT")
+    private String aiAnalysis;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

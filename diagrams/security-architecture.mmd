@@ -1,0 +1,94 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#fff', 'primaryBorderColor': '#16213e', 'lineColor': '#e94560', 'secondaryColor': '#0f3460', 'tertiaryColor': '#533483'}}}%%
+
+flowchart TD
+    subgraph Client["Client Request"]
+        REQ[/"HTTP Request"/]
+    end
+
+    subgraph SecurityFilters["Spring Security Filter Chains"]
+        direction TB
+        
+        subgraph FC1["Filter Chain 1 (Order 1) - Web UI"]
+            WEB_MATCH{"Path matches<br/>/, /login, /dashboard<br/>/agent/**, /admin/**?"}
+            FORM_LOGIN["Form Login<br/>+ Remember-Me"]
+            SESSION["Stateful Session<br/>(7 days remember-me)"]
+        end
+
+        subgraph FC2["Filter Chain 2 (Order 2) - Keycloak OAuth2"]
+            KC_ENABLED{"Keycloak<br/>Enabled?"}
+            KC_MATCH{"Path matches<br/>/api/keycloak/**?"}
+            KC_JWT["OAuth2 Resource Server<br/>JWT Decoder"]
+            KC_CONVERT["KeycloakJwtConverter<br/>Extract realm_access roles"]
+        end
+
+        subgraph FC3["Filter Chain 3 (Order 3) - JWT API"]
+            API_MATCH{"Path matches<br/>/api/**, /auth/**?"}
+            JWT_FILTER["JwtFilter<br/>Extract Bearer Token"]
+            JWT_VALID{"Token<br/>Valid?"}
+            JWT_SERVICE["JwtService<br/>HMAC-SHA256 Verify"]
+            USER_DETAILS["UserDetailsService<br/>Load User"]
+        end
+    end
+
+    subgraph Auth["Authentication Result"]
+        SEC_CTX["SecurityContextHolder<br/>Set Authentication"]
+        DENIED["403 Forbidden<br/>or 401 Unauthorized"]
+    end
+
+    subgraph RBAC["Role-Based Access Control"]
+        CLIENT_ROLE["ROLE_CLIENT<br/>/api/client/**"]
+        AGENT_ROLE["ROLE_AGENT_BANCAIRE<br/>/api/agent/**"]
+        ADMIN_ROLE["ROLE_ADMIN<br/>/api/admin/**"]
+    end
+
+    subgraph App["Application Layer"]
+        CONTROLLER["Controllers<br/>@PreAuthorize"]
+        SERVICE["Services"]
+        REPO["Repositories"]
+        AI["AI Service<br/>Spring AI"]
+    end
+
+    %% Flow
+    REQ --> WEB_MATCH
+    WEB_MATCH -->|Yes| FORM_LOGIN
+    FORM_LOGIN --> SESSION
+    SESSION --> SEC_CTX
+
+    WEB_MATCH -->|No| KC_ENABLED
+    KC_ENABLED -->|No| API_MATCH
+    KC_ENABLED -->|Yes| KC_MATCH
+
+    KC_MATCH -->|Yes| KC_JWT
+    KC_JWT --> KC_CONVERT
+    KC_CONVERT --> SEC_CTX
+    KC_MATCH -->|No| API_MATCH
+
+    API_MATCH -->|No| DENIED
+    API_MATCH -->|Yes| JWT_FILTER
+    JWT_FILTER --> JWT_VALID
+    JWT_VALID -->|No| DENIED
+    JWT_VALID -->|Yes| JWT_SERVICE
+    JWT_SERVICE --> USER_DETAILS
+    USER_DETAILS --> SEC_CTX
+
+    SEC_CTX --> CLIENT_ROLE
+    SEC_CTX --> AGENT_ROLE
+    SEC_CTX --> ADMIN_ROLE
+
+    CLIENT_ROLE --> CONTROLLER
+    AGENT_ROLE --> CONTROLLER
+    ADMIN_ROLE --> CONTROLLER
+    CONTROLLER --> SERVICE
+    SERVICE --> REPO
+    SERVICE --> AI
+
+    %% Styling
+    classDef filterChain fill:#0f3460,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef decision fill:#533483,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef auth fill:#16213e,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef denied fill:#e94560,stroke:#fff,stroke-width:2px,color:#fff
+
+    class FC1,FC2,FC3 filterChain
+    class WEB_MATCH,KC_ENABLED,KC_MATCH,API_MATCH,JWT_VALID decision
+    class SEC_CTX,CLIENT_ROLE,AGENT_ROLE,ADMIN_ROLE auth
+    class DENIED denied
