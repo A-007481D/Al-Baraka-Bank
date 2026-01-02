@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/client/me")
+@RequestMapping("/api/client")
 @RequiredArgsConstructor
 public class AccountController {
 
@@ -22,13 +22,13 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getMyAccount() {
         User user = SecurityUtils.getCurrentUser();
         Account account = accountService.getAccountByOwner(user);
-        
+
         AccountResponse response = AccountResponse.builder()
                 .accountNumber(account.getAccountNumber())
                 .balance(account.getBalance())
                 .ownerName(user.getFullName())
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 }

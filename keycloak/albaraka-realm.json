@@ -33,13 +33,16 @@
             "clientId": "albaraka-bank-api",
             "name": "Al Baraka Bank API",
             "enabled": true,
-            "publicClient": true,
+            "publicClient": false,
+            "secret": "albaraka-bank-secret-2026",
             "directAccessGrantsEnabled": true,
             "standardFlowEnabled": true,
             "implicitFlowEnabled": false,
             "serviceAccountsEnabled": false,
+            "authorizationServicesEnabled": false,
             "redirectUris": [
                 "http://localhost:8080/*",
+                "http://localhost:8080/login/oauth2/code/*",
                 "http://localhost:3000/*"
             ],
             "webOrigins": [

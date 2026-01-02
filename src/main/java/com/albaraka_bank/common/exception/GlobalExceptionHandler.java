@@ -80,6 +80,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        System.err.println("=== EXCEPTION CAUGHT BY GLOBAL HANDLER ===");
+        ex.printStackTrace();
+
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("message", "An unexpected error occurred");
