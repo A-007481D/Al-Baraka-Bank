@@ -26,4 +26,5 @@ public class OperationResponse {
     private String sourceAccountNumber;
     private String destinationAccountNumber;
     private boolean hasDocument;
+    private String aiAnalysis;
 }

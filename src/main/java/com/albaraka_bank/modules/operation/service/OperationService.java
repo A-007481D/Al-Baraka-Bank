@@ -74,7 +74,12 @@ public class OperationService {
     public List<OperationResponse> getOperationsByUser(User user) {
         Account account = accountService.getAccountByOwner(user);
         List<Operation> operations = operationRepository.findByAccountSourceOrAccountDestination(account, account);
-        return operations.stream().map(this::mapToResponse).collect(Collectors.toList());
+        return operations.stream()
+                .filter(op -> !(op.getStatus() == OperationStatus.PENDING &&
+                        op.getAccountDestination() != null &&
+                        op.getAccountDestination().getId().equals(account.getId())))
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     public List<OperationResponse> getPendingOperations() {
@@ -139,7 +144,8 @@ public class OperationService {
                 .destinationAccountNumber(
                         operation.getAccountDestination() != null ? operation.getAccountDestination().getAccountNumber()
                                 : null)
-                .hasDocument(hasDocument)
+                .hasDocument(documentRepository.existsByOperationId(operation.getId()))
+                .aiAnalysis(operation.getAiAnalysis())
                 .build();
     }
 }
