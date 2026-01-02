@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Operations - Al Baraka Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="sidebar-logo-icon">AB</div>
+                    <span>Al Baraka</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main Menu</div>
+                    <a th:href="@{/dashboard}" class="nav-link">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a th:href="@{/client/operations}" class="nav-link active">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <span>My Operations</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <span th:text="${#authentication.name.substring(0,1).toUpperCase()}">U</span>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" sec:authentication="name">user@example.com</div>
+                        <div class="user-role">Client</div>
+                    </div>
+                </div>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-outline btn-block">Logout</button>
+                </form>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-header">
+                <div>
+                    <h1 class="page-title">My Operations</h1>
+                    <div class="breadcrumb">
+                        <span>Home</span>
+                        <span>/</span>
+                        <span>Operations</span>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${success}" class="alert alert-success">
+                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span th:text="${success}"></span>
+            </div>
+
+            <div th:if="${warning}" class="alert alert-warning">
+                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span th:text="${warning}"></span>
+            </div>
+
+            <div th:if="${error}" class="alert alert-error">
+                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                <span th:text="${error}"></span>
+            </div>
+
+            <!-- Account Summary -->
+            <div class="account-banner">
+                <div class="account-banner-content">
+                    <div>
+                        <div class="account-number">
+                            <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2"
+                                style="vertical-align: middle; margin-right: 0.5rem;">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            <span th:text="${account.accountNumber}">ALB123456789012</span>
+                        </div>
+                        <div class="account-balance-label">Total Balance</div>
+                        <div class="account-balance-value">
+                            <span th:text="${#numbers.formatDecimal(account.balance, 1, 2)}">0.00</span>
+                            <span style="font-size: 1rem; font-weight: 400; opacity: 0.8;">DH</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Operation Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">New Operation</h3>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/client/operations}" method="post">
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 1rem; align-items: end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Type</label>
+                                <select name="type" class="form-control form-select" id="operationType" required>
+                                    <option value="DEPOSIT">Deposit</option>
+                                    <option value="WITHDRAWAL">Withdrawal</option>
+                                    <option value="TRANSFER">Transfer</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Amount (DH)</label>
+                                <input type="number" name="amount" class="form-control" step="0.01" min="0.01"
+                                    placeholder="0.00" required>
+                            </div>
+                            <div class="form-group" id="destinationField" style="margin-bottom: 0; display: none;">
+                                <label class="form-label">Destination Account</label>
+                                <input type="text" name="destinationAccountNumber" class="form-control"
+                                    placeholder="Enter account number">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="height: 46px;">
+                                Execute
+                            </button>
+                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--gray-500);">
+                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            Operations exceeding 10,000 DH require document upload and approval.
+                        </p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Transaction History</h3>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div th:if="${#lists.isEmpty(operations)}" class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" style="color: var(--gray-300);">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <h3 class="empty-state-title">No Operations Yet</h3>
+                        <p class="empty-state-text">Create your first operation using the form above</p>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(operations)}" class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Document</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="op : ${operations}">
+                                    <td>
+                                        <strong th:text="'#' + ${op.id}">#1</strong>
+                                    </td>
+                                    <td>
+                                        <span th:if="${op.type.name() == 'DEPOSIT'}"
+                                            style="color: var(--success); font-weight: 600;">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                style="vertical-align: middle;">
+                                                <line x1="12" y1="19" x2="12" y2="5"></line>
+                                                <polyline points="5 12 12 5 19 12"></polyline>
+                                            </svg>
+                                            Deposit
+                                        </span>
+                                        <span th:if="${op.type.name() == 'WITHDRAWAL'}"
+                                            style="color: var(--danger); font-weight: 600;">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                style="vertical-align: middle;">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <polyline points="19 12 12 19 5 12"></polyline>
+                                            </svg>
+                                            Withdrawal
+                                        </span>
+                                        <span th:if="${op.type.name() == 'TRANSFER'}"
+                                            style="color: var(--primary); font-weight: 600;">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                style="vertical-align: middle;">
+                                                <polyline points="17 1 21 5 17 9"></polyline>
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                                <polyline points="7 23 3 19 7 15"></polyline>
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                            </svg>
+                                            <span th:if="${op.sourceAccountNumber == account.accountNumber}">
+                                                Transfer to <span th:text="${op.destinationAccountNumber}"
+                                                    style="font-family: monospace; font-weight: normal; color: var(--gray-600);"></span>
+                                            </span>
+                                            <span th:if="${op.destinationAccountNumber == account.accountNumber}">
+                                                Transfer from <span th:text="${op.sourceAccountNumber}"
+                                                    style="font-family: monospace; font-weight: normal; color: var(--gray-600);"></span>
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong th:text="${#numbers.formatDecimal(op.amount, 1, 2)} + ' DH'">0.00
+                                            DH</strong>
+                                    </td>
+                                    <td>
+                                        <span th:if="${op.status.name() == 'PENDING'}"
+                                            class="badge badge-pending">Pending</span>
+                                        <span th:if="${op.status.name() == 'EXECUTED'}"
+                                            class="badge badge-executed">Executed</span>
+                                        <span th:if="${op.status.name() == 'CANCELLED'}"
+                                            class="badge badge-cancelled">Cancelled</span>
+                                        <span th:if="${op.status.name() == 'APPROVED'}"
+                                            class="badge badge-approved">Approved</span>
+                                        <span th:if="${op.status.name() == 'REJECTED'}"
+                                            class="badge badge-rejected">Rejected</span>
+                                    </td>
+                                    <td>
+                                        <span th:text="${#temporals.format(op.createdAt, 'MMM dd, yyyy')}">Jan 01,
+                                            2026</span>
+                                        <br>
+                                        <small style="color: var(--gray-500);"
+                                            th:text="${#temporals.format(op.createdAt, 'HH:mm')}">10:00</small>
+                                    </td>
+                                    <td>
+                                        <span th:if="${op.hasDocument}"
+                                            style="color: var(--success); font-weight: 600;">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                style="vertical-align: middle;">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                            Uploaded
+                                        </span>
+                                        <span th:unless="${op.hasDocument}" style="color: var(--gray-400);">—</span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <a th:if="${op.status.name() == 'PENDING' and !op.hasDocument}"
+                                            th:href="@{/client/operations/{id}/upload(id=${op.id})}"
+                                            class="btn btn-sm btn-primary">
+                                            <svg width="14" height="14" xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                style="vertical-align: middle;">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="17 8 12 3 7 8"></polyline>
+                                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                                            </svg>
+                                            Upload
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('operationType').addEventListener('change', function () {
+            const destField = document.getElementById('destinationField');
+            destField.style.display = this.value === 'TRANSFER' ? 'block' : 'none';
+        });
+    </script>
+</body>
+
+</html>

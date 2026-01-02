@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Al Baraka Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="auth-container">
+    <div class="auth-brand">
+        <div class="brand-logo">🏦 AL BARAKA BANK</div>
+        <p class="brand-tagline">Join thousands of satisfied customers in modern Islamic banking</p>
+
+        <div class="brand-features">
+            <div class="feature-item">
+                <div class="feature-icon">✨</div>
+                <div>
+                    <strong>Quick Setup</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Get started in minutes</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🛡️</div>
+                <div>
+                    <strong>Shariah Compliant</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">100% Islamic banking principles</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">💼</div>
+                <div>
+                    <strong>Professional Service</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Dedicated banking agents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-form-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Start your banking journey with Al Baraka</p>
+            </div>
+
+            <div th:if="${error}" class="alert alert-error">
+                <span>⚠️</span>
+                <span th:text="${error}"></span>
+            </div>
+
+            <form th:action="@{/register}" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" class="form-control"
+                           placeholder="John Doe" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control"
+                           placeholder="name@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control"
+                           placeholder="Minimum 6 characters" required minlength="6">
+                    <small style="color: var(--gray-500); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+                        Must be at least 6 characters long
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                           placeholder="Re-enter your password" required>
+                </div>
+
+                <div class="form-checkbox">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">
+                        I agree to the Terms of Service and Privacy Policy
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+            </form>
+
+            <div style="margin-top: 1.5rem; text-align: center; color: var(--gray-500); font-size: 0.9rem;">
+                Already have an account?
+                <a th:href="@{/login}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

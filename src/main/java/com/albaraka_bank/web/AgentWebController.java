@@ -29,15 +29,23 @@ public class AgentWebController {
 
     @PostMapping("/operations/{id}/approve")
     public String approveOperation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        operationService.approveOperation(id);
-        redirectAttributes.addFlashAttribute("success", "Operation approved successfully");
+        try {
+            operationService.approveOperation(id);
+            redirectAttributes.addFlashAttribute("success", "Operation approved successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error approving operation: " + e.getMessage());
+        }
         return "redirect:/agent/operations";
     }
 
     @PostMapping("/operations/{id}/reject")
     public String rejectOperation(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        operationService.rejectOperation(id);
-        redirectAttributes.addFlashAttribute("success", "Operation rejected");
+        try {
+            operationService.rejectOperation(id);
+            redirectAttributes.addFlashAttribute("success", "Operation rejected");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error rejecting operation: " + e.getMessage());
+        }
         return "redirect:/agent/operations";
     }
 }

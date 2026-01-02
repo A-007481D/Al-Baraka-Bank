@@ -3,37 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Al Baraka Digital</title>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <style>
-        body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; }
-        .login-card { background: rgba(255,255,255,0.95); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; }
-        .btn-primary:hover { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); transform: translateY(-2px); }
-    </style>
+    <title>Login - Al Baraka Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body class="d-flex align-items-center justify-content-center">
-    <div class="login-card p-5" style="width: 400px;">
-        <h2 class="text-center mb-4">🏦 Al Baraka Digital</h2>
-        
-        <div th:if="${param.error}" class="alert alert-danger">Invalid email or password</div>
-        <div th:if="${param.logout}" class="alert alert-info">You have been logged out</div>
-        
-        <form th:action="@{/login}" method="post">
-            <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input type="email" name="username" class="form-control" required autofocus>
+<body>
+<div class="auth-container">
+    <div class="auth-brand">
+        <div class="brand-logo">🏦 AL BARAKA BANK</div>
+        <p class="brand-tagline">Your trusted partner in Islamic banking excellence</p>
+
+        <div class="brand-features">
+            <div class="feature-item">
+                <div class="feature-icon">🔒</div>
+                <div>
+                    <strong>Secure Banking</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Military-grade encryption</p>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" required>
+            <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div>
+                    <strong>Instant Operations</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Real-time transaction processing</p>
+                </div>
             </div>
-            <div class="mb-3 form-check">
-                <input type="checkbox" name="remember-me" class="form-check-input" id="rememberMe">
-                <label class="form-check-label" for="rememberMe">Remember me</label>
+            <div class="feature-item">
+                <div class="feature-icon">📱</div>
+                <div>
+                    <strong>24/7 Access</strong>
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Banking anytime, anywhere</p>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
-        </form>
+        </div>
     </div>
+
+    <div class="auth-form-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Enter your credentials to access your account</p>
+            </div>
+
+            <div th:if="${param.error}" class="alert alert-error">
+                <span>⚠️</span>
+                <span>Invalid email or password. Please try again.</span>
+            </div>
+
+            <div th:if="${param.logout}" class="alert alert-success">
+                <span>✓</span>
+                <span>You have been successfully logged out.</span>
+            </div>
+
+            <div th:if="${success}" class="alert alert-success">
+                <span>✓</span>
+                <span th:text="${success}"></span>
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="username">Email Address</label>
+                    <input type="email" id="username" name="username" class="form-control"
+                           placeholder="name@example.com" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control"
+                           placeholder="Enter your password" required>
+                </div>
+
+                <div class="form-checkbox">
+                    <input type="checkbox" id="remember-me" name="remember-me">
+                    <label for="remember-me">Remember me for 30 days</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+
+            <div style="margin-top: 1.5rem; text-align: center; color: var(--gray-500); font-size: 0.9rem;">
+                Don't have an account?
+                <a th:href="@{/register}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Create Account</a>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

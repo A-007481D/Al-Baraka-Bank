@@ -1,6 +1,7 @@
 package com.albaraka_bank.web;
 
 import com.albaraka_bank.modules.iam.model.User;
+import com.albaraka_bank.modules.iam.model.UserRole;
 import com.albaraka_bank.modules.iam.repository.UserRepository;
 import com.albaraka_bank.modules.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,14 @@ public class AdminWebController {
     public String listUsers(Model model) {
         List<User> users = userRepository.findAll();
         model.addAttribute("users", users);
+
+        long activeUsersCount = users.stream().filter(User::isActive).count();
+        long agentUsersCount = users.stream()
+                .filter(u -> u.getRole() == UserRole.AGENT_BANCAIRE).count();
+
+        model.addAttribute("activeUsersCount", activeUsersCount);
+        model.addAttribute("agentUsersCount", agentUsersCount);
+
         return "admin/users";
     }
 
@@ -40,7 +49,7 @@ public class AdminWebController {
             user.setActive(true);
             User savedUser = userRepository.save(user);
 
-            if ("CLIENT".equals(user.getRole())) {
+            if (user.getRole() == UserRole.CLIENT) {
                 accountService.createAccount(savedUser);
             }
 

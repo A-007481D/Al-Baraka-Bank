@@ -1,65 +1,282 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Al Baraka Digital</title>
-    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <style>
-        body {
-            background: #f8f9fa;
-        }
-
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .card {
-            border: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-        }
-    </style>
+    <title>Dashboard - Al Baraka Bank</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-
 <body>
-    <nav class="navbar navbar-dark px-4">
-        <span class="navbar-brand">🏦 Al Baraka Digital</span>
-        <div class="d-flex align-items-center">
-            <span class="text-white me-3" sec:authentication="name">User</span>
-            <form th:action="@{/logout}" method="post" class="m-0">
-                <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">AB</div>
+                <span>Al Baraka</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Main Menu</div>
+                <a th:href="@{/dashboard}" class="nav-link active">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                <div sec:authorize="hasRole('CLIENT')">
+                    <a th:href="@{/client/operations}" class="nav-link">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <span>My Operations</span>
+                    </a>
+                </div>
+
+                <div sec:authorize="hasRole('AGENT_BANCAIRE')">
+                    <a th:href="@{/agent/operations}" class="nav-link">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>Pending Approvals</span>
+                    </a>
+                </div>
+
+                <div sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/admin/users}" class="nav-link">
+                        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>User Management</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <span th:text="${#authentication.name.substring(0,1).toUpperCase()}">U</span>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" sec:authentication="name">user@example.com</div>
+                    <div class="user-role" sec:authorize="hasRole('CLIENT')">Client</div>
+                    <div class="user-role" sec:authorize="hasRole('AGENT_BANCAIRE')">Banking Agent</div>
+                    <div class="user-role" sec:authorize="hasRole('ADMIN')">Administrator</div>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn btn-outline btn-block">Logout</button>
             </form>
         </div>
-    </nav>
+    </aside>
 
-    <div class="container mt-4">
-        <h4>Welcome to Al Baraka Digital</h4>
-        <div class="row mt-4">
-            <div class="col-md-4" sec:authorize="hasRole('AGENT_BANCAIRE')">
-                <div class="card p-4">
-                    <h5>🔍 Pending Operations</h5>
-                    <p class="text-muted">Review and approve operations</p>
-                    <a href="/agent/operations" class="btn btn-primary">View Operations</a>
-                </div>
-            </div>
-            <div class="col-md-4" sec:authorize="hasRole('ADMIN')">
-                <div class="card p-4">
-                    <h5>👥 User Management</h5>
-                    <p class="text-muted">Manage user accounts</p>
-                    <a href="/admin/users" class="btn btn-primary">Manage Users</a>
-                </div>
-            </div>
-            <div class="col-md-4" sec:authorize="hasRole('CLIENT')">
-                <div class="card p-4">
-                    <h5>💳 My Operations</h5>
-                    <p class="text-muted">View your transactions</p>
-                    <a href="/client/operations" class="btn btn-primary">View Operations</a>
+    <main class="main-content">
+        <div class="content-header">
+            <div>
+                <h1 class="page-title">Dashboard</h1>
+                <div class="breadcrumb">
+                    <span>Home</span>
+                    <span>/</span>
+                    <span>Dashboard</span>
                 </div>
             </div>
         </div>
-    </div>
-</body>
 
+        <div class="card">
+            <div class="card-body">
+                <h2 style="color: var(--primary); margin-bottom: 0.5rem;">
+                    Welcome to Al Baraka Bank, <span sec:authentication="name"></span>
+                </h2>
+                <p style="color: var(--gray-600); font-size: 1rem;">
+                    Manage your banking operations with ease and security.
+                </p>
+            </div>
+        </div>
+
+        <div sec:authorize="hasRole('CLIENT')">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Quick Actions</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #2d7052 0%, #1a5238 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Create deposits, withdrawals, and transfers
+                    </p>
+                    <a th:href="@{/client/operations}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                        Go to Operations
+                    </a>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Secure Banking</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #1a5f7a 0%, #0f3d4d 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        All transactions are encrypted and monitored
+                    </p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">24/7 Support</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #c9a961 0%, #a08847 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Our team is always here to help you
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div sec:authorize="hasRole('AGENT_BANCAIRE')">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Pending Operations</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #d4a574 0%, #b8895f 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Review and approve client operations
+                    </p>
+                    <a th:href="@{/agent/operations}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                        View Pending
+                    </a>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Quick Approval</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #2d7052 0%, #1a5238 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Fast and secure transaction approval
+                    </p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Agent Tools</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #1a5f7a 0%, #0f3d4d 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Professional banking agent dashboard
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div sec:authorize="hasRole('ADMIN')">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">User Management</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #1a5f7a 0%, #0f3d4d 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Manage clients, agents, and administrators
+                    </p>
+                    <a th:href="@{/admin/users}" class="btn btn-primary btn-sm" style="margin-top: 1rem;">
+                        Manage Users
+                    </a>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">System Control</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #b8405e 0%, #9c3550 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m15.364 6.364l-4.243-4.243m0 0l-4.243 4.243m4.243-4.243l-4.243-4.243"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Full administrative access and control
+                    </p>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Security</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #2d7052 0%, #1a5238 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 0.9rem; margin-top: 0.5rem;">
+                        Monitor and secure the banking platform
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
 </html>
