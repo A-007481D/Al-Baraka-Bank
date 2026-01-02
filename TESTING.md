@@ -1,210 +1,433 @@
-# Al Baraka Digital - Testing Guide
+# Al Baraka Bank - Complete Testing Guide
 
-## Quick Start
+A comprehensive guide to run, test, and verify all features of the Al Baraka Digital Banking Platform.
 
-### Prerequisites
-- Java 21+
-- Docker
-- Maven (or use included `./mvnw`)
+---
 
-### Run Tests
+## Table of Contents
+1. [Prerequisites](#prerequisites)
+2. [Quick Start](#quick-start)
+3. [API Testing (curl)](#api-testing-curl)
+4. [Web Interface Testing](#web-interface-testing)
+5. [Complete Test Scenarios](#complete-test-scenarios)
+
+---
+
+## Prerequisites
+
 ```bash
-# Unit + Integration tests
-make test
-# or
-./mvnw test
+# Required
+- Docker & Docker Compose
+- Java 17+
+- Maven 3.6+
+- curl (for API testing)
 ```
 
 ---
 
-## Running the Application
+## Quick Start
 
-### Option 1: Without Keycloak (Simple JWT Auth)
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your values
+
+# 2. Start all services
+docker-compose up --build
+
+# 3. Access
+# App: http://localhost:8080
+# Keycloak: http://localhost:8180
+```
+
+### Option 2: Local Development
 
 ```bash
 # 1. Start PostgreSQL
-make docker-db
-# or
 docker run -d --name albaraka-db \
   -e POSTGRES_DB=albaraka_db \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 postgres:15-alpine
+  -p 5433:5432 postgres:15-alpine
 
-# 2. Run application
-make run
-# or
-DB_URL=jdbc:postgresql://localhost:5432/albaraka_db \
-DB_USER=postgres DB_PASSWORD=postgres \
-JWT_SECRET=YWxiYXJha2EtYmFuay1zZWNyZXQta2V5 \
-KEYCLOAK_ENABLED=false \
-./mvnw spring-boot:run
-```
+# 2. Set environment variables
+export DB_URL=jdbc:postgresql://localhost:5433/albaraka_db
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+export JWT_SECRET=$(echo "your-secret-key-at-least-32-chars" | base64)
+export KEYCLOAK_ENABLED=false
+export SPRING_AI_OPENAI_API_KEY=sk-your-key
 
-### Option 2: With Keycloak (OAuth2 + JWT)
+# 3. Run application
+./mvnw spring-boot:run -DskipTests
 
-```bash
-# 1. Start all services
-make docker-up
-# or
-docker-compose up -d
-
-# 2. Wait for services to start (1-2 minutes)
-# 3. Access:
-#    - API: http://localhost:8080
-#    - Keycloak: http://localhost:8180 (admin/admin)
+# 4. Verify
+curl http://localhost:8080/login
 ```
 
 ---
 
-## API Testing
+## API Testing (curl)
 
-### 1. Register Client
+### 1. Authentication
+
+#### Register Client
 ```bash
 curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"fullName":"Test User","email":"client@test.com","password":"pass123"}'
+  -d '{
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "password": "password123"
+  }'
 ```
+Expected: `{"token": "eyJ..."}`
 
-### 2. Login
+#### Login
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"client@test.com","password":"pass123"}' | jq -r '.token')
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
 ```
+Expected: `{"token": "eyJ..."}`
 
-### 3. Create Deposit
+Save token:
 ```bash
-# Auto-approved (≤10,000 DH)
-curl -X POST http://localhost:8080/api/client/operations \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"DEPOSIT","amount":5000}'
-
-# Pending (>10,000 DH)
-curl -X POST http://localhost:8080/api/client/operations \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"DEPOSIT","amount":15000}'
+export CLIENT_TOKEN="eyJ..."
 ```
 
-### 4. Create Withdrawal
-```bash
-curl -X POST http://localhost:8080/api/client/operations \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"WITHDRAWAL","amount":2000}'
-```
+---
 
-### 5. Create Transfer
+### 2. Client Operations
+
+#### Create Deposit ≤ 10,000 DH (Auto-approved)
 ```bash
 curl -X POST http://localhost:8080/api/client/operations \
-  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"type":"TRANSFER","amount":1000,"destinationAccountNumber":"ACCOUNT_NUMBER"}'
+  -H "Authorization: Bearer $CLIENT_TOKEN" \
+  -d '{"type": "DEPOSIT", "amount": 5000}'
 ```
+Expected: `status: "EXECUTED"`, balance updated
 
-### 6. List Operations
+#### Create Deposit > 10,000 DH (Pending)
 ```bash
-curl http://localhost:8080/api/client/operations \
-  -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:8080/api/client/operations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $CLIENT_TOKEN" \
+  -d '{"type": "DEPOSIT", "amount": 25000}'
 ```
+Expected: `status: "PENDING"`, requires document upload
 
-### 7. Upload Document
+#### Upload Document
 ```bash
 curl -X POST http://localhost:8080/api/client/operations/1/document \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@document.pdf"
+  -H "Authorization: Bearer $CLIENT_TOKEN" \
+  -F "file=@/path/to/document.pdf"
+```
+Expected: AI analyzes and returns decision
+
+#### List Operations
+```bash
+curl -X GET http://localhost:8080/api/client/operations \
+  -H "Authorization: Bearer $CLIENT_TOKEN"
+```
+
+#### Create Withdrawal (with balance check)
+```bash
+curl -X POST http://localhost:8080/api/client/operations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $CLIENT_TOKEN" \
+  -d '{"type": "WITHDRAWAL", "amount": 1000}'
+```
+
+#### Create Transfer
+```bash
+curl -X POST http://localhost:8080/api/client/operations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $CLIENT_TOKEN" \
+  -d '{
+    "type": "TRANSFER",
+    "amount": 500,
+    "destinationAccountNumber": "ALB123456789012"
+  }'
 ```
 
 ---
 
-## Agent Endpoints
+### 3. Create Agent/Admin Users
 
 ```bash
-# Create agent (via database)
-docker exec albaraka-db psql -U postgres -d albaraka_db -c \
-  "INSERT INTO users (email, password, full_name, role, active, created_at) 
-   VALUES ('agent@bank.com', '<bcrypt_hash>', 'Agent', 'AGENT_BANCAIRE', true, NOW());"
-
-# Login as agent
-AGENT_TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+# First register a user to get valid BCrypt hash
+curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"agent@bank.com","password":"pass123"}' | jq -r '.token')
+  -d '{"fullName":"Temp","email":"temp@test.com","password":"password123"}'
 
-# Get pending operations
-curl http://localhost:8080/api/agent/operations/pending \
+# Get the hash and create agent/admin via SQL
+docker exec albaraka-db psql -U postgres -d albaraka_db -c "
+  INSERT INTO users (email, password, full_name, role, active, created_at) 
+  SELECT 'agent@bank.com', password, 'Bank Agent', 'AGENT_BANCAIRE', true, NOW()
+  FROM users WHERE email='temp@test.com';"
+
+docker exec albaraka-db psql -U postgres -d albaraka_db -c "
+  INSERT INTO users (email, password, full_name, role, active, created_at) 
+  SELECT 'admin@bank.com', password, 'Admin User', 'ADMIN', true, NOW()
+  FROM users WHERE email='temp@test.com';"
+```
+
+Get tokens:
+```bash
+export AGENT_TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"agent@bank.com","password":"password123"}' | grep -oP '"token":"\K[^"]+')
+
+export ADMIN_TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@bank.com","password":"password123"}' | grep -oP '"token":"\K[^"]+')
+```
+
+---
+
+### 4. Agent Operations
+
+#### List Pending Operations
+```bash
+curl -X GET http://localhost:8080/api/agent/operations/pending \
   -H "Authorization: Bearer $AGENT_TOKEN"
+```
 
-# Approve operation
+#### Approve Operation
+```bash
 curl -X PUT http://localhost:8080/api/agent/operations/1/approve \
   -H "Authorization: Bearer $AGENT_TOKEN"
+```
+Expected: `status: "EXECUTED"`, balance updated
 
-# Reject operation
-curl -X PUT http://localhost:8080/api/agent/operations/1/reject \
+#### Reject Operation
+```bash
+curl -X PUT http://localhost:8080/api/agent/operations/2/reject \
   -H "Authorization: Bearer $AGENT_TOKEN"
 ```
+Expected: `status: "CANCELLED"`, balance unchanged
 
 ---
 
-## Admin Endpoints
+### 5. Admin Operations
 
+#### List All Users
 ```bash
-# Create admin user, login, then:
+curl -X GET http://localhost:8080/api/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
-# Create user
+#### Create User
+```bash
 curl -X POST http://localhost:8080/api/admin/users \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"fullName":"New User","email":"new@bank.com","password":"pass","role":"CLIENT","active":true}'
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d '{
+    "fullName": "New Agent",
+    "email": "newagent@bank.com",
+    "password": "pass123",
+    "role": "AGENT_BANCAIRE",
+    "active": true
+  }'
+```
 
-# List users
-curl http://localhost:8080/api/admin/users \
+#### Update User
+```bash
+curl -X PUT http://localhost:8080/api/admin/users/5 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d '{
+    "fullName": "Updated Name",
+    "email": "newagent@bank.com",
+    "role": "AGENT_BANCAIRE",
+    "active": true
+  }'
+```
+
+#### Activate/Deactivate User
+```bash
+curl -X PUT http://localhost:8080/api/admin/users/5/activate \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 
-# Deactivate user
-curl -X PUT http://localhost:8080/api/admin/users/1/deactivate \
+curl -X PUT http://localhost:8080/api/admin/users/5/deactivate \
   -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
-# Delete user
-curl -X DELETE http://localhost:8080/api/admin/users/1 \
+#### Delete User
+```bash
+curl -X DELETE http://localhost:8080/api/admin/users/5 \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 ---
 
-## Keycloak Testing
+## Web Interface Testing
 
-### Setup Keycloak Realm
-1. Go to http://localhost:8180
-2. Login with admin/admin
-3. Create realm "albaraka"
-4. Create client "albaraka-bank-api" (public, direct access grants enabled)
-5. Create roles: client, agent, admin
-6. Create users and assign roles
+### Pages to Test
 
-### Get Keycloak Token
-```bash
-KC_TOKEN=$(curl -s -X POST http://localhost:8180/realms/albaraka/protocol/openid-connect/token \
-  -d "client_id=albaraka-bank-api" \
-  -d "username=user@test.com" \
-  -d "password=password" \
-  -d "grant_type=password" | jq -r '.access_token')
+| URL | Role | Description |
+|-----|------|-------------|
+| `/login` | Public | Login form with remember-me |
+| `/register` | Public | Client registration form |
+| `/dashboard` | Authenticated | Role-based dashboard |
+| `/client/operations` | CLIENT | View/create operations |
+| `/client/operations/{id}/upload` | CLIENT | Document upload |
+| `/agent/operations` | AGENT | Pending operations list |
+| `/admin/users` | ADMIN | User management |
+
+### Web Test Flow
+
+1. **Registration Flow**
+   - Navigate to http://localhost:8080/register
+   - Fill: Name, Email, Password, Confirm Password
+   - Submit → Redirect to login with success message
+
+2. **Login Flow**
+   - Navigate to http://localhost:8080/login
+   - Enter credentials, check "Remember me"
+   - Submit → Redirect to dashboard
+
+3. **Client Operations**
+   - Click "View Operations" on dashboard
+   - Create new operation (select type, enter amount)
+   - For >10k operations, upload document
+
+4. **Agent Approval**
+   - Login as agent
+   - View pending operations
+   - Click Approve/Reject buttons
+
+5. **Admin Management**
+   - Login as admin
+   - View user list
+   - Create/activate/deactivate users
+
+---
+
+## Complete Test Scenarios
+
+### Scenario 1: Client Registration & Account Creation ✅
+```
+1. POST /auth/register with valid data
+2. Verify JWT returned
+3. Check database: user created with role=CLIENT
+4. Check database: account created with ALB prefix
 ```
 
-### Use Keycloak Endpoints
-```bash
-curl http://localhost:8080/api/keycloak/client/operations \
-  -H "Authorization: Bearer $KC_TOKEN"
+### Scenario 2: Auto-Approved Deposit ✅
+```
+1. Login as client
+2. POST /api/client/operations with amount=5000
+3. Verify status=EXECUTED
+4. Check balance increased by 5000
+```
+
+### Scenario 3: Pending Deposit with AI Analysis ✅
+```
+1. Login as client
+2. POST /api/client/operations with amount=25000
+3. Verify status=PENDING
+4. POST document to /api/client/operations/{id}/document
+5. AI returns: APPROVE/REJECT/NEED_HUMAN_REVIEW
+6. If APPROVE: status=EXECUTED, balance updated
+7. If REJECT: status=CANCELLED
+8. If NEED_HUMAN_REVIEW: stays PENDING for agent
+```
+
+### Scenario 4: Withdrawal with Balance Check ✅
+```
+1. Login as client (has 5000 balance)
+2. POST /api/client/operations with type=WITHDRAWAL, amount=10000
+3. Verify error: "Insufficient balance"
+4. POST with amount=1000
+5. Verify status=EXECUTED, balance decreased
+```
+
+### Scenario 5: Transfer Between Accounts ✅
+```
+1. Login as client A
+2. Get client B's account number
+3. POST /api/client/operations with type=TRANSFER
+4. Verify client A balance decreased
+5. Verify client B balance increased
+```
+
+### Scenario 6: Agent Approval Workflow ✅
+```
+1. Client creates pending operation (>10k)
+2. Login as agent
+3. GET /api/agent/operations/pending
+4. PUT /api/agent/operations/{id}/approve
+5. Verify status=EXECUTED, balance updated
+```
+
+### Scenario 7: Agent Rejection ✅
+```
+1. Client creates pending operation
+2. Login as agent
+3. PUT /api/agent/operations/{id}/reject
+4. Verify status=CANCELLED, balance unchanged
+```
+
+### Scenario 8: Admin User Management ✅
+```
+1. Login as admin
+2. POST /api/admin/users (create agent)
+3. GET /api/admin/users (list all)
+4. PUT /api/admin/users/{id} (update)
+5. PUT /api/admin/users/{id}/deactivate
+6. DELETE /api/admin/users/{id}
 ```
 
 ---
 
-## Cleanup
+## Run Automated Tests
 
 ```bash
-make docker-down
-# or
-docker-compose down
-docker rm -f albaraka-db albaraka-keycloak
+# Unit + Integration tests
+./mvnw test
+
+# Expected: 8 tests pass
+# - AuthControllerIntegrationTest
+# - ClientOperationIntegrationTest
+# - AgentOperationIntegrationTest
+# - TransactionValidatorTest
+# - DepositStrategyTest
+# - WithdrawalStrategyTest
+# - TransferStrategyTest
+```
+
+---
+
+## Troubleshooting
+
+### Database Connection Failed
+```bash
+# Check container
+docker ps | grep albaraka-db
+docker logs albaraka-db
+
+# Restart
+docker restart albaraka-db
+```
+
+### JWT Invalid
+```bash
+# Ensure JWT_SECRET is set and base64-encoded
+echo "your-32-char-secret-key-here!!!" | base64
+```
+
+### AI Service Failed
+```bash
+# Check OpenAI key
+echo $SPRING_AI_OPENAI_API_KEY
+
+# AI errors default to NEED_HUMAN_REVIEW (graceful fallback)
 ```
