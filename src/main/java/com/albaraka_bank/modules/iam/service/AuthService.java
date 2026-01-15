@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @Service
@@ -44,7 +46,11 @@ public class AuthService {
                         accountService.createAccount(user);
                 }
 
-                return jwtService.generateToken(new org.springframework.security.core.userdetails.User(
+                // Add role as extra claim in JWT
+                Map<String, Object> extraClaims = new HashMap<>();
+                extraClaims.put("role", role.name());
+
+                return jwtService.generateToken(extraClaims, new org.springframework.security.core.userdetails.User(
                                 user.getEmail(),
                                 user.getPassword(),
                                 user.getRole().getAuthorities()));
@@ -54,7 +60,12 @@ public class AuthService {
                 authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(email, password));
                 var user = userRepository.findByEmail(email).orElseThrow();
-                return jwtService.generateToken(new org.springframework.security.core.userdetails.User(
+
+                // Add role as extra claim in JWT
+                Map<String, Object> extraClaims = new HashMap<>();
+                extraClaims.put("role", user.getRole().name());
+
+                return jwtService.generateToken(extraClaims, new org.springframework.security.core.userdetails.User(
                                 user.getEmail(),
                                 user.getPassword(),
                                 Collections.singletonList(
