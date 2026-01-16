@@ -1,12 +1,11 @@
 # Al Baraka Digital Banking Platform
 
-[![CI/CD Pipeline](https://github.com/YOUR-USERNAME/albaraka-bank/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/YOUR-USERNAME/albaraka-bank/actions/workflows/ci-cd.yml)
-[![Code Quality](https://github.com/YOUR-USERNAME/albaraka-bank/actions/workflows/qodana_code_quality.yml/badge.svg)](https://github.com/YOUR-USERNAME/albaraka-bank/actions/workflows/qodana_code_quality.yml)
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.org/projects/jdk/17/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.8-green.svg)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/Angular-19-red.svg)](https://angular.dev/)
 [![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.0--M6-blue.svg)](https://spring.io/projects/spring-ai)
 
-Secure banking platform with **dual JWT/OAuth2 authentication**, **AI-powered risk analysis**, role-based access control, and automated transaction workflows.
+Secure banking platform with **dual JWT/OAuth2 authentication**, **AI-powered risk analysis**, **Angular 19 frontend**, role-based access control, and automated transaction workflows.
 
 ---
 
@@ -14,37 +13,37 @@ Secure banking platform with **dual JWT/OAuth2 authentication**, **AI-powered ri
 
 - [Features](#features)
 - [Architecture Overview](#architecture-overview)
+- [Frontend (Angular 19)](#frontend-angular-19)
 - [Authentication & Security](#authentication--security)
-  - [JWT Stateless Authentication](#jwt-stateless-authentication)
-  - [OAuth2/Keycloak Integration](#oauth2keycloak-integration)
-  - [Security Filter Chains](#security-filter-chains)
 - [Business Logic](#business-logic)
-  - [Banking Operations](#banking-operations)
-  - [Automatic vs Manual Validation](#automatic-vs-manual-validation)
-  - [Strategy Pattern Implementation](#strategy-pattern-implementation)
 - [Spring AI Integration](#spring-ai-integration)
 - [REST API Documentation](#rest-api-documentation)
 - [Docker & Deployment](#docker--deployment)
-- [CI/CD Pipeline](#cicd-pipeline)
 - [Project Structure](#project-structure)
 - [Development](#development)
-- [Performance Criteria](#performance-criteria)
 
 ---
 
 ## Features
 
-- ✅ **Dual Authentication**: JWT stateless tokens + OAuth2/Keycloak
-- ✅ **Role-based Access Control**: CLIENT, AGENT_BANCAIRE, ADMIN
-- ✅ **AI-Powered Risk Analysis**: Automated transaction validation using Spring AI
-- ✅ **Automated Workflows**: 10,000 DH threshold for auto-approval
-- ✅ **Banking Operations**: Deposit, Withdrawal, Transfer
-- ✅ **Document Upload**: Justification for high-value transactions
-- ✅ **Agent Validation**: Manual review workflow with audit trail
-- ✅ **Admin Management**: User CRUD operations
-- ✅ **Web Interface**: Thymeleaf-based dashboard with Bootstrap 5
-- ✅ **Docker Ready**: Multi-service deployment with Docker Compose
-- ✅ **CI/CD**: Automated testing and deployment via GitHub Actions
+**Backend:**
+- Dual Authentication: JWT stateless tokens + OAuth2/Keycloak
+- Role-based Access Control: CLIENT, AGENT_BANCAIRE, ADMIN
+- AI-Powered Risk Analysis: Automated transaction validation using Spring AI + Google Gemini
+- Automated Workflows: 10,000 DH threshold for auto-approval
+- Banking Operations: Deposit, Withdrawal, Transfer
+- Document Upload: Justification for high-value transactions
+- Web Interface: Thymeleaf-based dashboard (legacy)
+- Docker Ready: Multi-service deployment with Docker Compose
+
+**Frontend (V3):**
+- Angular 19 with standalone components
+- Server-Side Rendering (SSR) support
+- TailwindCSS styling
+- Role-based dashboards (Client, Agent, Admin)
+- Document viewer with PDF/image preview
+- AI analysis display for agents
+- JWT authentication with interceptors
 
 ---
 
@@ -68,7 +67,7 @@ graph TD
         IAM[IAM Module]
         Acc[Account Module]
         Ops[Operation Module]
-        AI[AI Module (Spring AI)]
+        AI[AI Module 'Spring AI']
     end
 
     subgraph Data ["Data & Infrastructure"]
@@ -87,6 +86,66 @@ graph TD
     style App fill:#16213e,stroke:#fff,color:#fff
     style Data fill:#533483,stroke:#fff,color:#fff
 ```
+
+---
+
+## Frontend (Angular 19)
+
+The platform includes a modern Angular 19 SPA with role-based dashboards.
+
+### Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Angular 19 | Frontend framework (standalone components) |
+| TailwindCSS | Utility-first CSS styling |
+| RxJS | Reactive state management |
+| SSR | Server-Side Rendering support |
+
+### Project Structure
+
+```
+frontend/
+├── src/app/
+│   ├── core/
+│   │   ├── guards/         # Auth & role guards
+│   │   ├── interceptors/   # JWT & error interceptors
+│   │   ├── models/         # TypeScript interfaces
+│   │   └── services/       # Auth, operations, user services
+│   └── features/
+│       ├── auth/           # Login, register, unauthorized
+│       ├── client/         # Client dashboard
+│       ├── agent/          # Agent dashboard with review
+│       └── admin/          # Admin user management
+```
+
+### Running the Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+# Available at http://localhost:4200
+```
+
+### Key Features
+
+**Client Dashboard:**
+- Account balance overview
+- Create operations (deposit, withdrawal, transfer)
+- Document upload for high-value transactions
+- Operation history with status tracking
+
+**Agent Dashboard:**
+- Pending operations queue
+- Document viewer (PDF/image preview)
+- AI analysis recommendations display
+- Approve/reject workflow
+
+**Admin Dashboard:**
+- User management (CRUD)
+- Role assignment
+- User statistics
 
 ---
 
@@ -538,16 +597,18 @@ services:
 ### Quick Start
 
 ```bash
-# 1. Configure environment
-cp .env.example .env
-# Edit .env with your secrets
+# 1. Start backend with Docker
+make all   # or: docker-compose up --build
 
-# 2. Start all services
-docker-compose up --build
+# 2. Start frontend (in separate terminal)
+cd frontend
+npm install
+npm start
 
 # 3. Access
-# - App: http://localhost:8080
-# - Keycloak: http://localhost:8180
+# - Frontend: http://localhost:4200
+# - Backend API: http://localhost:8080
+# - Keycloak: http://localhost:8180 (if enabled)
 ```
 
 ### Environment Variables
@@ -591,7 +652,7 @@ jobs:
 
 ```mermaid
 flowchart LR
-    Push[Push to Main/Develop] --> Test[Run Tests (Maven)]
+    Push[Push to Main/Develop] --> Test[Run Tests Maven]
     Test --> Build[Build JAR]
     Build --> DockerBuild[Build Docker Image]
     DockerBuild --> PushReg[Push to GHCR]
@@ -617,35 +678,26 @@ flowchart LR
 ## Project Structure
 
 ```
-src/main/java/com/albaraka_bank/
-├── AlbarakaBankApplication.java    # Main entry point
-├── common/                         # Utilities, exception handling
-├── config/                         # Security, JWT configuration
-│   ├── JwtFilter.java             # JWT authentication filter
-│   ├── KeycloakJwtConverter.java  # OAuth2 role converter
-│   └── SecurityConfig.java        # 3 security filter chains
-├── modules/
-│   ├── iam/                       # Identity & Access Management
-│   │   ├── controller/            # Auth, Admin endpoints
-│   │   ├── dto/                   # Request/Response objects
-│   │   ├── model/                 # User entity
-│   │   └── service/               # Auth, JWT services
-│   ├── account/                   # Account management
-│   │   ├── model/                 # Account entity
-│   │   ├── repository/
-│   │   └── service/               # Account operations
-│   ├── operation/                 # Banking operations
-│   │   ├── controller/            # Client, Agent, Keycloak endpoints
-│   │   ├── dto/
-│   │   ├── factory/               # Strategy factory
-│   │   ├── model/                 # Operation, Document entities
-│   │   ├── repository/
-│   │   ├── service/               # Business logic
-│   │   └── strategy/              # Deposit, Withdrawal, Transfer
-│   └── ai/                        # Spring AI integration
-│       ├── model/                 # AiDecision enum
-│       └── service/               # AiService (OpenAI)
-└── web/                           # Thymeleaf controllers
+albaraka-bank/
+├── frontend/                         # Angular 19 SPA
+│   └── src/app/
+│       ├── core/                     # Guards, interceptors, services
+│       └── features/                 # Client, agent, admin dashboards
+├── src/main/java/com/albaraka_bank/
+│   ├── AlbarakaBankApplication.java  # Main entry point
+│   ├── config/                       # Security, JWT configuration
+│   │   ├── JwtFilter.java            # JWT authentication filter
+│   │   ├── KeycloakJwtConverter.java # OAuth2 role converter
+│   │   └── SecurityConfig.java       # 3 security filter chains
+│   ├── modules/
+│   │   ├── iam/                      # Identity & Access Management
+│   │   ├── account/                  # Account management
+│   │   ├── operation/                # Banking operations + strategies
+│   │   └── ai/                       # Spring AI integration
+│   └── web/                          # Thymeleaf controllers (legacy)
+├── docker-compose.yml                # Multi-service deployment
+├── Makefile                          # Build automation
+└── test-docs/                        # Sample test documents
 ```
 
 ---
@@ -656,6 +708,7 @@ src/main/java/com/albaraka_bank/
 
 - Java 17+
 - Maven 3.6+
+- Node.js 18+
 - PostgreSQL 15+ (or Docker)
 - Docker & Docker Compose
 
