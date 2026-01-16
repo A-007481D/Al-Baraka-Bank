@@ -26,7 +26,7 @@ public class DocumentService {
     private final OperationService operationService;
     private final com.albaraka_bank.modules.ai.service.TextExtractionService textExtractionService;
 
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
     private static final List<String> ALLOWED_TYPES = List.of("application/pdf", "image/jpeg", "image/png");
 
     @Transactional
@@ -55,26 +55,21 @@ public class DocumentService {
         Document savedDoc = documentRepository.save(document);
 
         try {
-            // Extract text from document
             String documentContent = textExtractionService.extractText(file);
 
             var analysisResult = aiService.analyzeOperation(operation.getAmount().doubleValue(), contentType,
                     documentContent);
 
-            // Save reasoning
             operation.setAiAnalysis(analysisResult.decision() + ": " + analysisResult.reasoning());
             operationRepository.save(operation);
 
-            // Auto-execution disabled per user request. Agent must review.
             System.out.println("AI Analysis completed. Decision: " + analysisResult.decision());
         } catch (Exception e) {
             System.err.println("AI Analysis failed: " + e.getMessage());
-            // Save error to analysis field for debugging
             try {
                 operation.setAiAnalysis("AI Analysis Failed: " + e.getMessage());
                 operationRepository.save(operation);
             } catch (Exception ex) {
-                // Ignore
             }
         }
 

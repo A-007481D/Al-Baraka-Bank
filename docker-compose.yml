@@ -21,6 +21,8 @@ services:
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME_URL: http://localhost:8180
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8180
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
@@ -48,11 +50,13 @@ services:
       UPLOAD_DIR: ${UPLOAD_DIR}
       KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-true}
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/albaraka
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-albaraka-bank-secret-2026}
     ports:
       - "8080:8080"
     depends_on:
       - postgres
       - keycloak
+    restart: on-failure:3
     networks:
       - albaraka-network
     volumes:

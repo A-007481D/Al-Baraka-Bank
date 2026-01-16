@@ -1,6 +1,9 @@
 package com.albaraka_bank.modules.iam.model;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import static java.util.Collections.singletonList;
 
 public enum UserRole implements GrantedAuthority {
     CLIENT,
@@ -13,7 +16,7 @@ public enum UserRole implements GrantedAuthority {
     }
 
     public java.util.Collection<? extends GrantedAuthority> getAuthorities() {
-        return java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority(getAuthority()));
+        return singletonList(new SimpleGrantedAuthority(getAuthority()));
     }
 }
 

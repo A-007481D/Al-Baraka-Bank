@@ -20,6 +20,12 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
   
+  logging:
+    level:
+      root: INFO
+      org.springframework.security: DEBUG
+      org.springframework.security.oauth2: DEBUG
+      org.springframework.web.client: DEBUG
   servlet:
     multipart:
       enabled: true
@@ -30,7 +36,27 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/albaraka}
+          issuer-uri: http://localhost:8180/realms/albaraka
+          jwk-set-uri: http://keycloak:8080/realms/albaraka/protocol/openid-connect/certs
+      client:
+        registration:
+          keycloak:
+            client-id: albaraka-bank-api
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+              - roles
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8180/realms/albaraka/protocol/openid-connect/auth
+            token-uri: http://keycloak:8080/realms/albaraka/protocol/openid-connect/token
+            user-info-uri: http://keycloak:8080/realms/albaraka/protocol/openid-connect/userinfo
+            jwk-set-uri: http://keycloak:8080/realms/albaraka/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
   
   ai:
     openai:

@@ -1,0 +1,386 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-01-09T09:55:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_albaraka",
+      "_type": "workspace",
+      "name": "Al Baraka Digital V2 - AUTO TOKEN",
+      "description": "FIXED: Tokens now auto-save! Just login and go.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_albaraka_base",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "client_token": "",
+        "agent_token": "",
+        "admin_token": ""
+      },
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_01_register",
+      "_type": "request",
+      "name": "01 - Register Client (AUTO SAVES TOKEN)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "description": "✅ Token auto-saves to client_token! Just send and move to next request.",
+      "parentId": "wrk_albaraka",
+      "authentication": {},
+      "parameters": [],
+      "settingEncodeUrl": true,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingRebuildPath": true,
+      "_type": "request"
+    },
+    {
+      "_id": "req_02_login_client",
+      "_type": "request",
+      "name": "02 - Login Client (AUTO SAVES TOKEN)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "description": "✅ Token auto-saves to client_token!",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_03_login_agent",
+      "_type": "request",
+      "name": "03 - Login Agent (AUTO SAVES TOKEN)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"agent@bank.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "description": "✅ Token auto-saves to agent_token! Agent must exist in DB first.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_04_login_admin",
+      "_type": "request",
+      "name": "04 - Login Admin (AUTO SAVES TOKEN)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@bank.com\",\n  \"password\": \"password123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "description": "✅ Token auto-saves to admin_token! Admin must exist in DB first.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_05_get_account",
+      "_type": "request",
+      "name": "05 - Get My Account Info",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/client/account",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Get account number and balance. Uses client_token from login.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_06_deposit_small",
+      "_type": "request",
+      "name": "06 - Deposit 5000 (Auto-Approved)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/client/operations",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"DEPOSIT\",\n  \"amount\": 5000\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Small deposit. Status = EXECUTED immediately.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_07_verify_balance",
+      "_type": "request",
+      "name": "07 - Verify Balance = 5000",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/client/account",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Check balance updated to 5000.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_08_deposit_large",
+      "_type": "request",
+      "name": "08 - Deposit 25000 (Pending)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/client/operations",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"DEPOSIT\",\n  \"amount\": 25000\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Large deposit. Status = PENDING. Copy the 'id' from response for next step.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_09_upload_doc",
+      "_type": "request",
+      "name": "09 - Upload Document (CHANGE ID IN URL)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/client/operations/2/document",
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "name": "file",
+            "type": "file",
+            "fileName": ""
+          }
+        ]
+      },
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Click URL, change /2/ to your operation ID. Choose any PDF file. AI analyzes it.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_10_list_ops",
+      "_type": "request",
+      "name": "10 - List All My Operations",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/client/operations",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "See all operations history.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_11_withdrawal",
+      "_type": "request",
+      "name": "11 - Withdrawal 1000",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/client/operations",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"WITHDRAWAL\",\n  \"amount\": 1000\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Withdraw 1000. Balance decreases.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_12_transfer",
+      "_type": "request",
+      "name": "12 - Transfer 500 (CHANGE DESTINATION)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/client/operations",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"TRANSFER\",\n  \"amount\": 500,\n  \"destinationAccountNumber\": \"ALB000000000000\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.client_token }}"
+        }
+      ],
+      "description": "Edit destinationAccountNumber in body. Put another user's account number.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_13_agent_pending",
+      "_type": "request",
+      "name": "13 - [AGENT] List Pending Operations",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/agent/operations/pending",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.agent_token }}"
+        }
+      ],
+      "description": "Agent sees all pending operations from all clients. Uses agent_token.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_14_agent_approve",
+      "_type": "request",
+      "name": "14 - [AGENT] Approve Operation (CHANGE ID)",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/agent/operations/3/approve",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.agent_token }}"
+        }
+      ],
+      "description": "Click URL, change /3/ to operation ID from previous request.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_15_agent_reject",
+      "_type": "request",
+      "name": "15 - [AGENT] Reject Operation (CHANGE ID)",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/agent/operations/4/reject",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.agent_token }}"
+        }
+      ],
+      "description": "Click URL, change /4/ to operation ID to reject.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_16_admin_list",
+      "_type": "request",
+      "name": "16 - [ADMIN] List All Users",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/admin/users",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
+      "description": "Admin sees all users. Uses admin_token.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_17_admin_create",
+      "_type": "request",
+      "name": "17 - [ADMIN] Create User",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/admin/users",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fullName\": \"New Agent\",\n  \"email\": \"newagent@bank.com\",\n  \"password\": \"password123\",\n  \"role\": \"AGENT_BANCAIRE\",\n  \"active\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
+      "description": "Create new user. Can be CLIENT, AGENT_BANCAIRE, or ADMIN.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_18_admin_deactivate",
+      "_type": "request",
+      "name": "18 - [ADMIN] Deactivate User (CHANGE ID)",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/admin/users/5/deactivate",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
+      "description": "Click URL, change /5/ to user ID to deactivate.",
+      "parentId": "wrk_albaraka"
+    },
+    {
+      "_id": "req_19_admin_activate",
+      "_type": "request",
+      "name": "19 - [ADMIN] Activate User (CHANGE ID)",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/admin/users/5/activate",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
+      "description": "Click URL, change /5/ to user ID to activate.",
+      "parentId": "wrk_albaraka"
+    }
+  ]
+}
