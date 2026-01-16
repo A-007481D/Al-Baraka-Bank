@@ -178,8 +178,7 @@ public class SecurityConfig {
 
         @Bean
         public LogoutSuccessHandler oidcLogoutSuccessHandler() {
-                OidcClientInitiatedLogoutSuccessHandler successHandler =
-                        new OidcClientInitiatedLogoutSuccessHandler(
+                OidcClientInitiatedLogoutSuccessHandler successHandler = new OidcClientInitiatedLogoutSuccessHandler(
                                 clientRegistrationRepository);
                 successHandler.setPostLogoutRedirectUri("{baseUrl}/login?logout");
                 return successHandler;
@@ -196,7 +195,8 @@ public class SecurityConfig {
                                         Map<String, Object> userInfo = oidcUserAuthority.getUserInfo().getClaims();
 
                                         if (userInfo.containsKey("realm_access")) {
-                                                Map<String, Object> realmAccess = (Map<String, Object>) userInfo.get("realm_access");
+                                                Map<String, Object> realmAccess = (Map<String, Object>) userInfo
+                                                                .get("realm_access");
                                                 List<String> roles = (List<String>) realmAccess.get("roles");
                                                 roles.forEach(role -> {
                                                         String mappedRole = switch (role.toLowerCase()) {
@@ -219,9 +219,10 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(Arrays.asList(
-                                "http://localhost:4200",
-                                "http://localhost:4201"));
+                // Allow all localhost ports for development
+                configuration.setAllowedOriginPatterns(Arrays.asList(
+                                "http://localhost:*",
+                                "http://127.0.0.1:*"));
                 configuration.setAllowedMethods(Arrays.asList(
                                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList("*"));
